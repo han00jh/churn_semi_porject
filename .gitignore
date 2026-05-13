@@ -1,0 +1,17 @@
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# 환경변수
+.env
+
+# OS
+.DS_Store
+Thumbs.db
