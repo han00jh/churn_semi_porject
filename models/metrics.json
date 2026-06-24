@@ -1,243 +1,237 @@
 {
-  "generated_at": "2026-06-24T09:52:19",
+  "generated_at": "2026-06-24T10:56:36",
   "dataset": {
     "rows": 30198,
-    "features": 35,
+    "features": 29,
+    "features_dropped": [
+      "usage_q",
+      "tenure_q",
+      "cs_top10_flag",
+      "day_heavy_flag",
+      "long_high_usage_flag",
+      "cs_ratio"
+    ],
     "churn_rate": 0.1099,
     "n_churn": 3318
   },
   "split": {
-    "train": 24158,
+    "dev": 24158,
     "test": 6040,
     "method": "stratified 80/20",
     "random_state": 42
   },
+  "leakage_audit": {
+    "duplicate_rows": 0,
+    "duplicate_feature_rows": 0,
+    "max_abs_target_corr": 0.0775,
+    "verdict": "중복행/타깃누수 없음 — 점수는 다수 약신호의 상호작용에서 유래"
+  },
+  "cv": {
+    "scheme": "RepeatedStratifiedKFold(5x2)",
+    "models": {
+      "Logistic Regression": {
+        "pr_auc_mean": 0.1792,
+        "pr_auc_std": 0.0077,
+        "roc_auc_mean": 0.6401,
+        "roc_auc_std": 0.009
+      },
+      "Random Forest": {
+        "pr_auc_mean": 0.3919,
+        "pr_auc_std": 0.0241,
+        "roc_auc_mean": 0.8043,
+        "roc_auc_std": 0.0108
+      },
+      "XGBoost": {
+        "pr_auc_mean": 0.5358,
+        "pr_auc_std": 0.0219,
+        "roc_auc_mean": 0.8713,
+        "roc_auc_std": 0.0092
+      },
+      "LightGBM": {
+        "pr_auc_mean": 0.5673,
+        "pr_auc_std": 0.0199,
+        "roc_auc_mean": 0.887,
+        "roc_auc_std": 0.0094
+      }
+    }
+  },
+  "calibration": {
+    "method": "isotonic",
+    "brier_raw": 0.0809,
+    "brier_calibrated": 0.0601
+  },
+  "overfit_gap_roc": 0.0929,
   "best_model": "LightGBM",
-  "threshold": 0.501,
+  "threshold": 0.1532,
+  "threshold_criterion": "F2 (recall-weighted, dev OOF)",
   "models": {
     "Logistic Regression": {
-      "roc_auc": 0.64,
-      "pr_auc": 0.1785,
-      "recall": 0.5346,
-      "precision": 0.1614,
-      "f1": 0.248,
-      "accuracy": 0.6435,
-      "brier": 0.2358,
-      "confusion_matrix": [
-        [
-          3532,
-          1844
-        ],
-        [
-          309,
-          355
-        ]
-      ],
-      "threshold": 0.529
+      "pr_auc_mean": 0.1792,
+      "pr_auc_std": 0.0077,
+      "roc_auc_mean": 0.6401,
+      "roc_auc_std": 0.009
     },
     "Random Forest": {
-      "roc_auc": 0.8006,
-      "pr_auc": 0.3761,
-      "recall": 0.4804,
-      "precision": 0.3289,
-      "f1": 0.3905,
-      "accuracy": 0.8351,
-      "brier": 0.1536,
-      "confusion_matrix": [
-        [
-          4725,
-          651
-        ],
-        [
-          345,
-          319
-        ]
-      ],
-      "threshold": 0.5651
+      "pr_auc_mean": 0.3919,
+      "pr_auc_std": 0.0241,
+      "roc_auc_mean": 0.8043,
+      "roc_auc_std": 0.0108
     },
     "XGBoost": {
-      "roc_auc": 0.8827,
-      "pr_auc": 0.5289,
-      "recall": 0.6386,
-      "precision": 0.519,
-      "f1": 0.5726,
-      "accuracy": 0.8952,
-      "brier": 0.1094,
-      "confusion_matrix": [
-        [
-          4983,
-          393
-        ],
-        [
-          240,
-          424
-        ]
-      ],
-      "threshold": 0.5764
+      "pr_auc_mean": 0.5358,
+      "pr_auc_std": 0.0219,
+      "roc_auc_mean": 0.8713,
+      "roc_auc_std": 0.0092
     },
     "LightGBM": {
-      "roc_auc": 0.9044,
-      "pr_auc": 0.5766,
-      "recall": 0.7123,
-      "precision": 0.5558,
-      "f1": 0.6244,
-      "accuracy": 0.9058,
-      "brier": 0.0805,
-      "confusion_matrix": [
-        [
-          4998,
-          378
-        ],
-        [
-          191,
-          473
-        ]
-      ],
-      "threshold": 0.501
+      "pr_auc_mean": 0.5673,
+      "pr_auc_std": 0.0199,
+      "roc_auc_mean": 0.887,
+      "roc_auc_std": 0.0094
     }
   },
   "best": {
-    "roc_auc": 0.9044,
-    "pr_auc": 0.5766,
-    "recall": 0.7123,
-    "precision": 0.5558,
-    "f1": 0.6244,
-    "accuracy": 0.9058,
-    "brier": 0.0805,
+    "roc_auc": 0.906,
+    "pr_auc": 0.5811,
+    "recall": 0.7711,
+    "precision": 0.4763,
+    "f1": 0.5888,
+    "accuracy": 0.8816,
+    "brier": 0.0601,
     "confusion_matrix": [
       [
-        4998,
-        378
+        4813,
+        563
       ],
       [
-        191,
-        473
+        152,
+        512
       ]
     ],
-    "threshold": 0.501
+    "threshold": 0.1532
   },
   "top_features_by_importance": [
     {
-      "feature": "tenure",
-      "importance": 1134.0
+      "feature": "eve_calls",
+      "importance": 1026.0
     },
     {
-      "feature": "eve_calls",
-      "importance": 1031.0
+      "feature": "tenure",
+      "importance": 1009.0
     },
     {
       "feature": "day_calls",
-      "importance": 999.0
+      "importance": 1005.0
     },
     {
       "feature": "night_calls",
-      "importance": 950.0
+      "importance": 997.0
     },
     {
       "feature": "night_charge",
-      "importance": 950.0
+      "importance": 932.0
     },
     {
       "feature": "total_calls",
-      "importance": 871.0
-    },
-    {
-      "feature": "eve_rate",
-      "importance": 861.0
-    },
-    {
-      "feature": "day_charge",
-      "importance": 803.0
+      "importance": 857.0
     },
     {
       "feature": "eve_charge",
-      "importance": 798.0
+      "importance": 852.0
     },
     {
       "feature": "day_minutes",
+      "importance": 803.0
+    },
+    {
+      "feature": "eve_rate",
+      "importance": 787.0
+    },
+    {
+      "feature": "day_charge",
       "importance": 766.0
     },
     {
-      "feature": "night_rate",
-      "importance": 690.0
+      "feature": "time_ratio_std",
+      "importance": 700.0
     },
     {
-      "feature": "time_ratio_std",
-      "importance": 672.0
+      "feature": "night_minutes",
+      "importance": 667.0
     },
     {
       "feature": "eve_minutes",
-      "importance": 643.0
+      "importance": 662.0
     },
     {
-      "feature": "day_rate",
-      "importance": 622.0
+      "feature": "cs_per_call",
+      "importance": 656.0
     },
     {
-      "feature": "rate_std",
-      "importance": 610.0
+      "feature": "cs_per_100min",
+      "importance": 655.0
     }
   ],
   "top_features_by_shap": [
     {
       "feature": "vm_count",
-      "mean_abs_shap": 0.2939
-    },
-    {
-      "feature": "day_rate",
-      "mean_abs_shap": 0.2202
+      "mean_abs_shap": 0.24317
     },
     {
       "feature": "day_minutes",
-      "mean_abs_shap": 0.2085
+      "mean_abs_shap": 0.23122
     },
     {
       "feature": "night_charge",
-      "mean_abs_shap": 0.1942
-    },
-    {
-      "feature": "tenure",
-      "mean_abs_shap": 0.18725
-    },
-    {
-      "feature": "eve_rate",
-      "mean_abs_shap": 0.18376
-    },
-    {
-      "feature": "day_charge",
-      "mean_abs_shap": 0.16625
-    },
-    {
-      "feature": "eve_charge",
-      "mean_abs_shap": 0.16548
-    },
-    {
-      "feature": "day_calls",
-      "mean_abs_shap": 0.14477
+      "mean_abs_shap": 0.21119
     },
     {
       "feature": "cs_per_100min",
-      "mean_abs_shap": 0.14438
+      "mean_abs_shap": 0.20873
+    },
+    {
+      "feature": "eve_charge",
+      "mean_abs_shap": 0.19795
+    },
+    {
+      "feature": "eve_rate",
+      "mean_abs_shap": 0.19535
+    },
+    {
+      "feature": "day_rate",
+      "mean_abs_shap": 0.17651
+    },
+    {
+      "feature": "day_calls",
+      "mean_abs_shap": 0.17425
+    },
+    {
+      "feature": "day_charge",
+      "mean_abs_shap": 0.15885
+    },
+    {
+      "feature": "tenure",
+      "mean_abs_shap": 0.15111
     },
     {
       "feature": "eve_calls",
-      "mean_abs_shap": 0.13999
+      "mean_abs_shap": 0.14781
     },
     {
       "feature": "night_rate",
-      "mean_abs_shap": 0.13868
+      "mean_abs_shap": 0.13038
     },
     {
-      "feature": "time_ratio_std",
-      "mean_abs_shap": 0.11697
+      "feature": "cs_calls",
+      "mean_abs_shap": 0.12554
     },
     {
-      "feature": "night_minutes",
-      "mean_abs_shap": 0.11493
+      "feature": "eve_minutes",
+      "mean_abs_shap": 0.11973
     },
     {
       "feature": "night_day_diff",
-      "mean_abs_shap": 0.1132
+      "mean_abs_shap": 0.11917
     }
   ]
 }
