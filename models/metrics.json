@@ -1,0 +1,243 @@
+{
+  "generated_at": "2026-06-24T09:52:19",
+  "dataset": {
+    "rows": 30198,
+    "features": 35,
+    "churn_rate": 0.1099,
+    "n_churn": 3318
+  },
+  "split": {
+    "train": 24158,
+    "test": 6040,
+    "method": "stratified 80/20",
+    "random_state": 42
+  },
+  "best_model": "LightGBM",
+  "threshold": 0.501,
+  "models": {
+    "Logistic Regression": {
+      "roc_auc": 0.64,
+      "pr_auc": 0.1785,
+      "recall": 0.5346,
+      "precision": 0.1614,
+      "f1": 0.248,
+      "accuracy": 0.6435,
+      "brier": 0.2358,
+      "confusion_matrix": [
+        [
+          3532,
+          1844
+        ],
+        [
+          309,
+          355
+        ]
+      ],
+      "threshold": 0.529
+    },
+    "Random Forest": {
+      "roc_auc": 0.8006,
+      "pr_auc": 0.3761,
+      "recall": 0.4804,
+      "precision": 0.3289,
+      "f1": 0.3905,
+      "accuracy": 0.8351,
+      "brier": 0.1536,
+      "confusion_matrix": [
+        [
+          4725,
+          651
+        ],
+        [
+          345,
+          319
+        ]
+      ],
+      "threshold": 0.5651
+    },
+    "XGBoost": {
+      "roc_auc": 0.8827,
+      "pr_auc": 0.5289,
+      "recall": 0.6386,
+      "precision": 0.519,
+      "f1": 0.5726,
+      "accuracy": 0.8952,
+      "brier": 0.1094,
+      "confusion_matrix": [
+        [
+          4983,
+          393
+        ],
+        [
+          240,
+          424
+        ]
+      ],
+      "threshold": 0.5764
+    },
+    "LightGBM": {
+      "roc_auc": 0.9044,
+      "pr_auc": 0.5766,
+      "recall": 0.7123,
+      "precision": 0.5558,
+      "f1": 0.6244,
+      "accuracy": 0.9058,
+      "brier": 0.0805,
+      "confusion_matrix": [
+        [
+          4998,
+          378
+        ],
+        [
+          191,
+          473
+        ]
+      ],
+      "threshold": 0.501
+    }
+  },
+  "best": {
+    "roc_auc": 0.9044,
+    "pr_auc": 0.5766,
+    "recall": 0.7123,
+    "precision": 0.5558,
+    "f1": 0.6244,
+    "accuracy": 0.9058,
+    "brier": 0.0805,
+    "confusion_matrix": [
+      [
+        4998,
+        378
+      ],
+      [
+        191,
+        473
+      ]
+    ],
+    "threshold": 0.501
+  },
+  "top_features_by_importance": [
+    {
+      "feature": "tenure",
+      "importance": 1134.0
+    },
+    {
+      "feature": "eve_calls",
+      "importance": 1031.0
+    },
+    {
+      "feature": "day_calls",
+      "importance": 999.0
+    },
+    {
+      "feature": "night_calls",
+      "importance": 950.0
+    },
+    {
+      "feature": "night_charge",
+      "importance": 950.0
+    },
+    {
+      "feature": "total_calls",
+      "importance": 871.0
+    },
+    {
+      "feature": "eve_rate",
+      "importance": 861.0
+    },
+    {
+      "feature": "day_charge",
+      "importance": 803.0
+    },
+    {
+      "feature": "eve_charge",
+      "importance": 798.0
+    },
+    {
+      "feature": "day_minutes",
+      "importance": 766.0
+    },
+    {
+      "feature": "night_rate",
+      "importance": 690.0
+    },
+    {
+      "feature": "time_ratio_std",
+      "importance": 672.0
+    },
+    {
+      "feature": "eve_minutes",
+      "importance": 643.0
+    },
+    {
+      "feature": "day_rate",
+      "importance": 622.0
+    },
+    {
+      "feature": "rate_std",
+      "importance": 610.0
+    }
+  ],
+  "top_features_by_shap": [
+    {
+      "feature": "vm_count",
+      "mean_abs_shap": 0.2939
+    },
+    {
+      "feature": "day_rate",
+      "mean_abs_shap": 0.2202
+    },
+    {
+      "feature": "day_minutes",
+      "mean_abs_shap": 0.2085
+    },
+    {
+      "feature": "night_charge",
+      "mean_abs_shap": 0.1942
+    },
+    {
+      "feature": "tenure",
+      "mean_abs_shap": 0.18725
+    },
+    {
+      "feature": "eve_rate",
+      "mean_abs_shap": 0.18376
+    },
+    {
+      "feature": "day_charge",
+      "mean_abs_shap": 0.16625
+    },
+    {
+      "feature": "eve_charge",
+      "mean_abs_shap": 0.16548
+    },
+    {
+      "feature": "day_calls",
+      "mean_abs_shap": 0.14477
+    },
+    {
+      "feature": "cs_per_100min",
+      "mean_abs_shap": 0.14438
+    },
+    {
+      "feature": "eve_calls",
+      "mean_abs_shap": 0.13999
+    },
+    {
+      "feature": "night_rate",
+      "mean_abs_shap": 0.13868
+    },
+    {
+      "feature": "time_ratio_std",
+      "mean_abs_shap": 0.11697
+    },
+    {
+      "feature": "night_minutes",
+      "mean_abs_shap": 0.11493
+    },
+    {
+      "feature": "night_day_diff",
+      "mean_abs_shap": 0.1132
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" font-family="'Segoe UI','Noto Sans KR',sans-serif">
+  <defs>
+    <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="ml" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdecee"/><stop offset="1" stop-color="#fbdce0"/>
+    </linearGradient>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#9aa1b5"/>
+    </marker>
+    <filter id="sh" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1f2540" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="560" fill="#f7f8fc"/>
+  <rect x="0" y="0" width="1200" height="64" fill="url(#hdr)"/>
+  <text x="36" y="40" fill="#fff" font-size="24" font-weight="800">Telco Churn Prediction · System Architecture</text>
+  <text x="1164" y="40" fill="#dfe1fb" font-size="14" text-anchor="end">EDA → Modeling → Real-time Prediction Dashboard</text>
+
+  <!-- Row labels -->
+  <text x="36" y="118" fill="#8b91a7" font-size="13" font-weight="700">DATA &amp; ANALYSIS</text>
+  <text x="36" y="300" fill="#8b91a7" font-size="13" font-weight="700">MACHINE LEARNING</text>
+  <text x="36" y="438" fill="#8b91a7" font-size="13" font-weight="700">SERVING &amp; APP</text>
+
+  <!-- ===== Row 1: data & analysis ===== -->
+  <g filter="url(#sh)">
+    <rect x="36" y="130" width="200" height="86" rx="14" fill="#fff" stroke="#e3e7f3"/>
+    <text x="136" y="166" text-anchor="middle" font-size="15" font-weight="800" fill="#1f2540">원천 데이터</text>
+    <text x="136" y="190" text-anchor="middle" font-size="12.5" fill="#6b7280">train.csv · 30,200행</text>
+    <text x="136" y="206" text-anchor="middle" font-size="12.5" fill="#6b7280">이탈률 ~11% (불균형)</text>
+  </g>
+  <g filter="url(#sh)">
+    <rect x="286" y="130" width="220" height="86" rx="14" fill="#fff" stroke="#e3e7f3"/>
+    <text x="396" y="160" text-anchor="middle" font-size="15" font-weight="800" fill="#1f2540">EDA · 통계 검정</text>
+    <text x="396" y="183" text-anchor="middle" font-size="12" fill="#6b7280">Cohen's d · Mann–Whitney</text>
+    <text x="396" y="200" text-anchor="middle" font-size="12" fill="#6b7280">카이제곱 · VIF · Kaplan–Meier</text>
+  </g>
+  <g filter="url(#sh)">
+    <rect x="556" y="130" width="220" height="86" rx="14" fill="#fff" stroke="#e3e7f3"/>
+    <text x="666" y="160" text-anchor="middle" font-size="15" font-weight="800" fill="#1f2540">피처 엔지니어링</text>
+    <text x="666" y="183" text-anchor="middle" font-size="12" fill="#6b7280">35개 파생 피처</text>
+    <text x="666" y="200" text-anchor="middle" font-size="12" fill="#6b7280">비율·로그·분위·플래그</text>
+  </g>
+  <g filter="url(#sh)">
+    <rect x="826" y="130" width="220" height="86" rx="14" fill="#fff" stroke="#e3e7f3"/>
+    <text x="936" y="160" text-anchor="middle" font-size="15" font-weight="800" fill="#1f2540">featured 데이터셋</text>
+    <text x="936" y="183" text-anchor="middle" font-size="12" fill="#6b7280">churn.csv (36열)</text>
+    <text x="936" y="200" text-anchor="middle" font-size="12" fill="#6b7280">CSV · Oracle(선택)</text>
+  </g>
+
+  <!-- ===== Row 2: ML ===== -->
+  <g filter="url(#sh)">
+    <rect x="286" y="262" width="300" height="100" rx="14" fill="url(#ml)" stroke="#f3b8be"/>
+    <text x="436" y="292" text-anchor="middle" font-size="15" font-weight="800" fill="#9a2530">ml/train.py — 모델 학습</text>
+    <text x="436" y="316" text-anchor="middle" font-size="12.5" fill="#7a3b41">LogReg · RandomForest · XGBoost · LightGBM</text>
+    <text x="436" y="334" text-anchor="middle" font-size="12.5" fill="#7a3b41">불균형 보정 · StratifiedKFold · 임계값 튜닝</text>
+    <text x="436" y="351" text-anchor="middle" font-size="12.5" fill="#7a3b41">ROC-AUC · PR-AUC · 캘리브레이션 · SHAP</text>
+  </g>
+  <g filter="url(#sh)">
+    <rect x="636" y="262" width="200" height="100" rx="14" fill="#fff" stroke="#e3e7f3"/>
+    <text x="736" y="298" text-anchor="middle" font-size="15" font-weight="800" fill="#1f2540">churn_model</text>
+    <text x="736" y="320" text-anchor="middle" font-size="13" font-weight="800" fill="#e63946">.joblib</text>
+    <text x="736" y="343" text-anchor="middle" font-size="12" fill="#6b7280">model + threshold + features</text>
+  </g>
+  <g filter="url(#sh)">
+    <rect x="886" y="262" width="160" height="100" rx="14" fill="#fff" stroke="#e3e7f3"/>
+    <text x="966" y="298" text-anchor="middle" font-size="15" font-weight="800" fill="#1f2540">metrics.json</text>
+    <text x="966" y="322" text-anchor="middle" font-size="12" fill="#6b7280">+ docs/img/*.png</text>
+    <text x="966" y="340" text-anchor="middle" font-size="12" fill="#6b7280">평가 차트 5종</text>
+  </g>
+
+  <!-- ===== Row 3: serving & app ===== -->
+  <g filter="url(#sh)">
+    <rect x="286" y="400" width="240" height="92" rx="14" fill="#eef0fe" stroke="#cdd2fb"/>
+    <text x="406" y="430" text-anchor="middle" font-size="15" font-weight="800" fill="#3730a3">Flask API</text>
+    <text x="406" y="452" text-anchor="middle" font-size="11.5" fill="#4b4fae">/predict · /predict_sample</text>
+    <text x="406" y="469" text-anchor="middle" font-size="11.5" fill="#4b4fae">/risk_list · /model_metrics · /get_all_data</text>
+  </g>
+  <g filter="url(#sh)">
+    <rect x="576" y="400" width="250" height="92" rx="14" fill="#fff" stroke="#e3e7f3"/>
+    <text x="701" y="430" text-anchor="middle" font-size="15" font-weight="800" fill="#1f2540">Dashboard (Chart.js)</text>
+    <text x="701" y="452" text-anchor="middle" font-size="11.5" fill="#6b7280">5개 주제 차트 · 실시간 예측</text>
+    <text x="701" y="469" text-anchor="middle" font-size="11.5" fill="#6b7280">게이지 · Target List · KPI</text>
+  </g>
+  <g filter="url(#sh)">
+    <rect x="876" y="400" width="170" height="92" rx="14" fill="#fff" stroke="#e3e7f3"/>
+    <text x="961" y="436" text-anchor="middle" font-size="15" font-weight="800" fill="#1f2540">LLM 인사이트</text>
+    <text x="961" y="459" text-anchor="middle" font-size="11.5" fill="#6b7280">Groq/Claude/Gemini</text>
+    <text x="961" y="476" text-anchor="middle" font-size="11" fill="#9aa1b5">키 없으면 데모 모드</text>
+  </g>
+
+  <!-- arrows row1 -->
+  <line x1="236" y1="173" x2="282" y2="173" stroke="#9aa1b5" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="506" y1="173" x2="552" y2="173" stroke="#9aa1b5" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="776" y1="173" x2="822" y2="173" stroke="#9aa1b5" stroke-width="2" marker-end="url(#arr)"/>
+  <!-- featured -> train (down-left) -->
+  <path d="M936,216 L936,239 L436,239 L436,258" fill="none" stroke="#9aa1b5" stroke-width="2" marker-end="url(#arr)"/>
+  <!-- train -> model -> metrics -->
+  <line x1="586" y1="312" x2="632" y2="312" stroke="#9aa1b5" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="836" y1="312" x2="882" y2="312" stroke="#9aa1b5" stroke-width="2" marker-end="url(#arr)"/>
+  <!-- model -> flask (down-left) -->
+  <path d="M736,362 L736,381 L406,381 L406,396" fill="none" stroke="#9aa1b5" stroke-width="2" marker-end="url(#arr)"/>
+  <!-- featured -> flask (left side) -->
+  <path d="M286,300 L150,300 L150,446 L282,446" fill="none" stroke="#cbd0e0" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arr)"/>
+  <text x="120" y="375" font-size="11" fill="#9aa1b5" transform="rotate(-90 120 375)">집계 통계</text>
+  <!-- flask -> dashboard -> llm -->
+  <line x1="526" y1="446" x2="572" y2="446" stroke="#9aa1b5" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="826" y1="446" x2="872" y2="446" stroke="#9aa1b5" stroke-width="2" marker-end="url(#arr)"/>
+</svg>

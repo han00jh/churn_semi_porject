@@ -1,0 +1,18 @@
+# ============================================================
+# Churn — training / analysis / test dependencies (dev)
+# install:  pip install -r requirements.txt -r requirements-dev.txt
+# ============================================================
+
+-r requirements.txt
+
+# ── Model explainability + plots (ml/train.py) ──
+shap==0.49.1
+matplotlib==3.10.9
+seaborn==0.13.2
+scipy==1.15.3
+
+# ── Statistical / survival analysis (EDA notebook) ──
+lifelines==0.30.0
+
+# ── Tests ──
+pytest==9.1.1

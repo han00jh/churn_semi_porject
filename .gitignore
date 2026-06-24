@@ -1,0 +1,31 @@
+# ── Secrets / 환경변수 (절대 커밋 금지) ──
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+google_client_secret.json
+*client_secret*.json
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.pyo
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# ── 모델/대용량 산출물 ──
+*.pkl
+*.joblib
+# 단, 서빙용 프로덕션 모델은 커밋 (무설정 실행 가능하도록)
+!models/churn_model.joblib
+
+# ── OS / 에디터 ──
+.DS_Store
+.vscode/
+.idea/
+
+# ── 레거시(보관용) 내부의 무거운/임시 산출물 ──
+legacy/**/__pycache__/

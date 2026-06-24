@@ -32,41 +32,74 @@ Flask 경로: churn_app.py (프로젝트 루트)
 print("🔥 churn_main.py 실행 중 🔥")
 
 from flask      import Flask, render_template, request, jsonify
-from sqlalchemy import create_engine
 from dotenv     import load_dotenv
-from churn_ai   import AIService
+from pathlib    import Path
 import pandas as pd
 import os
 
+from churn_ai      import AIService
+import model_service as ms
+
 load_dotenv()
-DB_URL = os.getenv("DB_URL")
-ai     = AIService()   # AIService가 .env 직접 읽음
-app    = Flask(__name__)
-engine = create_engine(DB_URL)
+
+# ── 경로 (실행 위치와 무관하게 __file__ 기준) ──
+BASE_DIR = Path(__file__).resolve().parent          # web/
+ROOT_DIR = BASE_DIR.parent                           # 프로젝트 루트
+CSV_PATH = ROOT_DIR / "data" / "churn" / "featured" / "churn.csv"
+
+# ── 환경설정 (전부 선택 — 없어도 데모 모드로 구동) ──
+DB_URL = os.getenv("DB_URL") or None
+DEBUG  = os.getenv("FLASK_DEBUG", "0").lower() in ("1", "true", "yes")
+HOST   = os.getenv("HOST", "127.0.0.1")
+PORT   = int(os.getenv("PORT", "6001"))
+
+app = Flask(__name__)
+
+# ── AIService 안전 초기화 (키 없으면 데모 모드, 절대 기동 실패하지 않음) ──
+try:
+    ai = AIService()
+except Exception as e:
+    print(f"⚠️ AIService 초기화 실패 → 데모 모드: {e}")
+    ai = AIService(demo=True)
+
+# ── DB 엔진은 DB_URL 이 있을 때만 지연 생성 (없으면 CSV 우선) ──
+_engine = None
+def _get_engine():
+    global _engine
+    if _engine is None and DB_URL:
+        from sqlalchemy import create_engine
+        _engine = create_engine(DB_URL)
+    return _engine
 
 
 # ============================================================
-# 공통 유틸 — CHURN 테이블 로드 (앱 기동 후 1회 캐시)
+# 공통 유틸 — CHURN 데이터 로드 (앱 기동 후 1회 캐시)
+#   우선순위: DB_URL 있으면 Oracle → 실패 시 CSV → 그래도 실패면 명확한 에러
 # ============================================================
 _df_cache = None
 
 def get_churn_df():
-    """
-    CHURN 테이블 전체 → pandas DataFrame
-    DB 실패 시 churn.csv fallback
-    """
+    """CHURN 데이터 → pandas DataFrame (DB 우선, CSV fallback)."""
     global _df_cache
     if _df_cache is not None:
         return _df_cache
-    try:
-        with engine.connect() as conn:
-            df = pd.read_sql("SELECT * FROM CHURN", conn)
-            df.columns = df.columns.str.lower()
-        print("✅ CHURN 테이블 로드 성공")
-    except Exception as e:
-        print(f"⚠️ DB 실패 → CSV fallback: {e}")
-        df = pd.read_csv("churn.csv")
-        df.columns = df.columns.str.strip().str.lower()
+
+    engine = _get_engine()
+    if engine is not None:
+        try:
+            with engine.connect() as conn:
+                df = pd.read_sql("SELECT * FROM CHURN", conn)
+                df.columns = df.columns.str.strip().str.lower()
+            print("✅ CHURN 테이블 로드 성공 (DB)")
+            _df_cache = df
+            return df
+        except Exception as e:
+            print(f"⚠️ DB 로드 실패 → CSV fallback: {e}")
+
+    # CSV fallback (기본 경로) — utf-8-sig 로 BOM 안전 제거
+    df = pd.read_csv(CSV_PATH, encoding="utf-8-sig")
+    df.columns = df.columns.str.strip().str.lower()
+    print(f"✅ CHURN 데이터 로드 성공 (CSV: {CSV_PATH.name}, {len(df):,}행)")
     _df_cache = df
     return df
 
@@ -336,9 +369,74 @@ def get_all_data():
     if topic not in TOPIC_MAP:
         topic = "A"
     print(f"📡 /get_all_data | topic={topic}")
-    data = TOPIC_MAP[topic]()
-    data["topic"] = topic
-    return jsonify(data)
+    try:
+        data = TOPIC_MAP[topic]()
+        data["topic"] = topic
+        return jsonify(data)
+    except Exception as e:
+        print(f"❌ /get_all_data 실패: {e}")
+        return jsonify({"error": "데이터 로드 실패", "detail": str(e)}), 500
+
+
+# ============================================================
+# 예측 시스템 라우트 (모델 서빙)
+# ============================================================
+
+@app.route("/model_metrics")
+def model_metrics():
+    """학습된 모델 지표 (KPI 바 · 모델 카드용)."""
+    if not ms.is_ready():
+        return jsonify({"ready": False,
+                        "message": "모델 미학습 — `python ml/train.py` 실행 필요"}), 200
+    m = ms.load_metrics()
+    m["ready"] = True
+    m["meta"]  = ms.model_meta()
+    return jsonify(m)
+
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    """
+    고객 피처 일부(또는 전부)를 받아 이탈 확률·위험등급·핵심요인 반환.
+    요청: {overrides: {cs_calls: 6, tenure: 30, ...}}  (부분 입력 허용)
+    """
+    if not ms.is_ready():
+        return jsonify({"error": "model_unavailable",
+                        "message": "모델 미학습 — `python ml/train.py` 실행 필요"}), 503
+    body = request.json or {}
+    overrides = body.get("overrides", body)   # overrides 키 없으면 본문 전체를 입력으로
+    try:
+        return jsonify(ms.predict(overrides))
+    except Exception as e:
+        print(f"❌ /predict 실패: {e}")
+        return jsonify({"error": "predict_failed", "detail": str(e)}), 500
+
+
+@app.route("/predict_sample")
+def predict_sample():
+    """데이터셋의 실제 고객 1명을 뽑아 예측 (입력 없이 '예측 체험')."""
+    if not ms.is_ready():
+        return jsonify({"error": "model_unavailable"}), 503
+    seed = request.args.get("seed", type=int)
+    try:
+        return jsonify(ms.predict_sample(seed))
+    except Exception as e:
+        print(f"❌ /predict_sample 실패: {e}")
+        return jsonify({"error": "predict_failed", "detail": str(e)}), 500
+
+
+@app.route("/risk_list")
+def risk_list():
+    """이탈 확률 상위 N명 (Target List)."""
+    if not ms.is_ready():
+        return jsonify({"error": "model_unavailable"}), 503
+    n = request.args.get("n", default=100, type=int)
+    n = max(1, min(n, 500))
+    try:
+        return jsonify(ms.risk_list(n))
+    except Exception as e:
+        print(f"❌ /risk_list 실패: {e}")
+        return jsonify({"error": "risk_list_failed", "detail": str(e)}), 500
 
 
 @app.route("/ai_topic_insight", methods=["POST"])
@@ -374,28 +472,29 @@ def ai_topic_insight():
     return jsonify(result)
 
 
-# 기존 AI 라우트 유지 (churn_ai.py 호환성)
+# 기존 AI 라우트 유지 (churn_ai.py 호환성) — 본문 None 가드 추가
 @app.route("/chat_insight", methods=["POST"])
 def chat_insight():
+    body = request.json or {}
     return jsonify(ai.get_insight(
-        graph_data    = request.json.get("graph_data"),
-        user_message  = request.json.get("message"),
-        auto_mode     = request.json.get("auto_mode", False),
-        mode          = request.json.get("mode"),
-        hypothesis_id = request.json.get("hypothesis_id"),
+        graph_data    = body.get("graph_data"),
+        user_message  = body.get("message"),
+        auto_mode     = body.get("auto_mode", False),
+        mode          = body.get("mode"),
+        hypothesis_id = body.get("hypothesis_id"),
     ))
 
 @app.route("/ai_summary",  methods=["POST"])
 def ai_summary():
-    return jsonify(ai.get_summary(request.json.get("graph_data")))
+    return jsonify(ai.get_summary((request.json or {}).get("graph_data")))
 
 @app.route("/ai_strategy", methods=["POST"])
 def ai_strategy():
-    return jsonify(ai.get_strategy(request.json.get("graph_data")))
+    return jsonify(ai.get_strategy((request.json or {}).get("graph_data")))
 
 @app.route("/ai_forecast", methods=["POST"])
 def ai_forecast():
-    return jsonify(ai.get_forecast(request.json.get("graph_data")))
+    return jsonify(ai.get_forecast((request.json or {}).get("graph_data")))
 
 @app.route("/ai_status")
 def ai_status():
@@ -414,4 +513,5 @@ def approve_claude():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=6001, debug=True)
+    print(f"🌐 http://{HOST}:{PORT}  (debug={DEBUG})")
+    app.run(host=HOST, port=PORT, debug=DEBUG)

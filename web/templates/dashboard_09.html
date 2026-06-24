@@ -29,6 +29,7 @@
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/topic.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/predict.css') }}">
 
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -98,36 +99,32 @@
   <span class="topbar-badge" id="groqBadge">✦ GROQ</span>
 </div>
 
-<!-- KPI 바 — 기존 그대로 -->
-<div class="kpi-bar" style="justify-content:center;">
+<!-- KPI 바 — 학습된 모델 지표로 자동 갱신 (/model_metrics) -->
+<div class="kpi-bar" id="kpiBar" style="justify-content:center;">
   <div class="kpi-item model" style="flex:0 0 auto; padding:0 24px; justify-content:flex-start; flex-direction:column; align-items:flex-start;">
-<span class="kpi-value" style="color:#111827; font-size:1.6rem; white-space:nowrap; line-height:1; display:block; margin-bottom:-8px;  margin-top:6px;">MODEL</span>
-<span class="kpi-value" style="color:#9ca3af; font-size:1.3rem; white-space:nowrap; line-height:1; display:block;margin-top:-4px;">Random Forest Classifier</span>
+    <span class="kpi-value" style="color:#111827; font-size:1.6rem; white-space:nowrap; line-height:1; display:block; margin-bottom:-8px; margin-top:6px;">MODEL</span>
+    <span class="kpi-value" id="kpiModel" style="color:#9ca3af; font-size:1.3rem; white-space:nowrap; line-height:1; display:block; margin-top:-4px;">LightGBM</span>
   </div>
 
     <div class="kpi-item pass" style="justify-content:center;">
+      <div class="kpi-left"><span class="kpi-label">ROC-AUC</span></div>
+      <div class="kpi-left"><span class="kpi-value" id="kpiRoc">0.90<span class="kpi-unit"></span></span></div>
+      <div class="kpi-right"><span class="kpi-badge badge-pass">우수</span></div>
+    </div>
+    <div class="kpi-item pass" style="justify-content:center;">
+      <div class="kpi-left"><span class="kpi-label">PR-AUC</span></div>
+      <div class="kpi-left"><span class="kpi-value" id="kpiPr">0.58<span class="kpi-unit"></span></span></div>
+      <div class="kpi-right"><span class="kpi-badge badge-pass">불균형 보정</span></div>
+    </div>
+    <div class="kpi-item pass" style="justify-content:center;">
+      <div class="kpi-left"><span class="kpi-label">해지 탐지율 (Recall)</span></div>
+      <div class="kpi-left"><span class="kpi-value" id="kpiRecall">71<span class="kpi-unit">%</span></span></div>
+      <div class="kpi-right"><span class="kpi-badge badge-pass">핵심 KPI</span></div>
+    </div>
+    <div class="kpi-item pass" style="justify-content:center;">
       <div class="kpi-left"><span class="kpi-label">F1 Score</span></div>
-      <div class="kpi-left"><span class="kpi-value">0.70<span class="kpi-unit"></span></span></div>
-      <div class="kpi-right">
-        <span class="kpi-badge badge-pass">향상 +14.3p</span>
-      </div>
-      <div class="kpi-left"><span class="kpi-value">0.80<span class="kpi-unit"></span></span></div>
-    </div>
-    <div class="kpi-item pass" style="justify-content:center;">
-      <div class="kpi-left"><span class="kpi-label">Recall</span></div>
-      <div class="kpi-left"><span class="kpi-value">0.66<span class="kpi-unit"></span></span></div>
-      <div class="kpi-right">
-        <span class="kpi-badge badge-pass">향상 +22.7p</span>
-      </div>
-      <div class="kpi-left"><span class="kpi-value">0.81<span class="kpi-unit"></span></span></div>
-    </div>
-    <div class="kpi-item pass" style="justify-content:center;">
-      <div class="kpi-left"><span class="kpi-label">해지 탐지율</span></div>
-      <div class="kpi-left"><span class="kpi-value">64<span class="kpi-unit">%</span></span></div>
-      <div class="kpi-right">
-        <span class="kpi-badge badge-pass">향상 +6%p</span>
-      </div>
-      <div class="kpi-left"><span class="kpi-value">68<span class="kpi-unit">%</span></span></div>
+      <div class="kpi-left"><span class="kpi-value" id="kpiF1">0.62<span class="kpi-unit"></span></span></div>
+      <div class="kpi-right"><span class="kpi-badge badge-pass">정밀·재현 균형</span></div>
     </div>
   </div>
 
@@ -332,6 +329,66 @@
       </aside>
 
     </div>
+
+    <!-- ════════════════════════════════════════════
+         실시간 이탈 예측 — 학습 모델 서빙
+         ════════════════════════════════════════════ -->
+    <section class="predict-section" id="predictSection">
+      <div class="predict-head">
+        <span class="predict-title">🎯 실시간 이탈 예측</span>
+        <span class="predict-sub">학습된 모델이 고객 프로필로부터 이탈 확률을 즉시 산출합니다</span>
+        <span class="predict-model-badge" id="predModelBadge">LightGBM · AUC 0.90</span>
+      </div>
+
+      <div class="predict-grid">
+        <!-- 1) 입력 콘솔 -->
+        <div class="predict-card predict-console">
+          <div class="pc-title">고객 프로필 입력</div>
+          <div class="pc-sliders" id="pcSliders"><!-- JS가 슬라이더 생성 --></div>
+          <div class="pc-actions">
+            <button class="pc-btn pc-btn-primary" id="btnPredict">이탈 예측</button>
+            <button class="pc-btn pc-btn-ghost"   id="btnSample">랜덤 실제고객</button>
+          </div>
+        </div>
+
+        <!-- 2) 결과 게이지 -->
+        <div class="predict-card predict-result">
+          <div class="pr-ring" id="prRing">
+            <div class="pr-ring-inner">
+              <div class="pr-percent" id="prPercent">--<span style="font-size:1.1rem">%</span></div>
+              <div class="pr-grade" id="prGrade">대기</div>
+            </div>
+          </div>
+          <div class="pr-verdict" id="prVerdict">프로필을 조정하고 ‘이탈 예측’을 누르세요</div>
+          <div class="pr-meta" id="prMeta"></div>
+        </div>
+
+        <!-- 3) 핵심 요인 -->
+        <div class="predict-card predict-factors">
+          <div class="pc-title">핵심 이탈 요인</div>
+          <ul class="pf-list" id="prFactors">
+            <li class="pf-empty">예측을 실행하면 주요 변수가 표시됩니다</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 4) Target List -->
+      <div class="predict-card predict-targets">
+        <div class="pc-title">🔥 즉시 관리 대상 — 고위험 고객 Top <span id="riskN">20</span>
+          <span class="pt-hint">(전체 고객 이탈확률 스코어링 결과)</span>
+        </div>
+        <div class="target-table-wrap">
+          <table class="target-table" id="targetTable">
+            <thead><tr>
+              <th>고객 ID</th><th>이탈확률</th><th>등급</th>
+              <th>상담횟수</th><th>가입기간</th><th>총사용량</th><th>평균요금</th><th>실제</th>
+            </tr></thead>
+            <tbody id="targetBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </div>
 
   <!-- 푸터 -->
@@ -344,5 +401,6 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/topic.js') }}"></script>
+<script src="{{ url_for('static', filename='js/predict.js') }}"></script>
 </body>
 </html>

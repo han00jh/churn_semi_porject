@@ -4,8 +4,13 @@
 import os
 import json
 import re
-from groq import Groq
-import anthropic
+
+# groq 는 런타임 필수지만, 미설치 환경에서도 모듈 import 자체는 깨지지 않게 가드
+try:
+    from groq import Groq
+except ImportError:
+    Groq = None
+# anthropic / google-generativeai 는 사용 시점(_init_client)에 지연 import
 
 
 # ════════════════════════════════════════════════════════════
@@ -35,7 +40,7 @@ import anthropic
 
 class AIService:
 
-    def __init__(self, api_key=None):
+    def __init__(self, api_key=None, demo=False):
         raw_slots = [
             # 슬롯 1~4: Groq
             {'key': os.getenv('GROQ_API_KEY_1', api_key or ''), 'provider': 'groq',   'label': 'Groq_1'},
@@ -53,7 +58,7 @@ class AIService:
 
         # USE_ONLY 설정 시 해당 키만 사용 (평소엔 .env에서 주석처리)
         only = os.getenv('USE_ONLY', '')
-        if only:
+        if only and self.slots:
             filtered = [s for s in self.slots if s['label'].lower() == only.lower()]
             if filtered:
                 self.slots = filtered
@@ -61,17 +66,20 @@ class AIService:
             else:
                 print(f"⚠️ '{only}' 못 찾음 — 전체 키 사용")
 
-        if not self.slots:
-            raise ValueError("❌ 사용 가능한 API 키가 없습니다. .env를 확인하세요.")
-
         self.key_index         = 0
         self.call_count        = 0
         self.model_name        = "llama-3.3-70b-versatile"
         self.claude_model_name = "claude-haiku-4-5-20251001"
-        self.gemini_model_name = "gemini-pro"
+        self.gemini_model_name = "gemini-1.5-flash"   # 'gemini-pro' 폐기 → 현행 모델
+        self.client            = None
+
+        # ── 키가 하나도 없으면 데모 모드 (예외 던지지 않음 → 앱은 정상 기동) ──
+        self.demo = demo or not self.slots or Groq is None
+        if self.demo:
+            print("🎭 AIService 데모 모드 — LLM 키 없이 폴백 인사이트 제공")
+            return
 
         self._init_client()
-
         print(f"✅ AIService 초기화 완료")
         print(f"   등록된 키: {[s['label'] for s in self.slots]}")
         print(f"   현재 사용: {self.current_label()}")
@@ -80,13 +88,24 @@ class AIService:
     # 현재 슬롯 정보 반환
     # ────────────────────────────────────────────────
     def current_label(self):
+        if self.demo or not self.slots:
+            return "Demo"
         return self.slots[self.key_index]['label']
 
     def current_provider(self):
+        if self.demo or not self.slots:
+            return "demo"
         return self.slots[self.key_index]['provider']
 
     def get_current_key_index(self):
+        if self.demo or not self.slots:
+            return 0
         return self.key_index + 1
+
+    def approve_claude(self):
+        """Claude 전환 팝업 확인 콜백 (호환용 — 상태만 기록)."""
+        self.claude_approved = True
+        return True
 
     # ────────────────────────────────────────────────
     # 클라이언트 초기화 — 슬롯 전환 시마다 호출
@@ -130,6 +149,8 @@ class AIService:
     # 연결 확인
     # ────────────────────────────────────────────────
     def check_connection(self):
+        if self.demo:
+            return {"status": "demo", "model": "demo", "key_label": "Demo", "key_index": 0}
         try:
             if self.current_provider() == 'groq':
                 self.client.chat.completions.create(
@@ -159,37 +180,47 @@ class AIService:
     # ────────────────────────────────────────────────
     def get_api_status(self):
         return {
+            "demo":          self.demo,
             "current_label": self.current_label(),
             "current_index": self.get_current_key_index(),
             "total_keys":    len(self.slots),
             "call_count":    self.call_count,
-            "all_labels":    [s['label'] for s in self.slots],
+            "all_labels":    [s['label'] for s in self.slots] or ["Demo"],
         }
 
     # ────────────────────────────────────────────────
     # 컨텍스트 빌더 (공통)
     # ────────────────────────────────────────────────
     def _build_context(self, graph_data):
-        grade   = graph_data.get('grade', 'ALL')
-        context = f"현재 분석 중인 위험 등급: {grade}\n"
-        for i in range(1, 7):
-            h_key  = f"h{i}"
-            h_data = graph_data.get(h_key, {})
-            title  = h_data.get('title', f'가설{i}')
+        if not isinstance(graph_data, dict):
+            return ""
+        topic_name = graph_data.get('_topic_name') or graph_data.get('grade')
+        context = f"분석 주제: {topic_name}\n" if topic_name else ""
+        for i in range(1, 7):                 # 존재하는 차트(h1~h4)만, 없으면 건너뜀
+            h_data = graph_data.get(f"h{i}")
+            if not isinstance(h_data, dict):
+                continue
+            title  = h_data.get('title', f'차트{i}')
             labels = h_data.get('labels', [])
             values = h_data.get('values', [])
-            if isinstance(values, list) and len(values) > 10:
+            if not values and isinstance(h_data.get('series'), dict):   # 교차(클러스터/멀티라인) 차트
+                val_str = f"교차 시리즈 {list(h_data['series'].keys())}"
+            elif isinstance(values, list) and len(values) > 10:
                 nums    = [v for v in values if isinstance(v, (int, float))]
-                val_str = f"평균:{sum(nums)/len(nums):.2f}, 최대:{max(nums)}, 개수:{len(nums)}" if nums else f"데이터 {len(values)}개"
+                val_str = (f"평균:{sum(nums)/len(nums):.2f}, 최대:{max(nums)}, 개수:{len(nums)}"
+                           if nums else f"데이터 {len(values)}개")
             else:
                 val_str = str(list(zip(labels, values)) if labels else values)
-            context += f"[{h_key}: {title}] {val_str}\n"
+            context += f"[{title}] {val_str}\n"
         return context
 
     # ────────────────────────────────────────────────
     # _call — API 호출 + 429 시 자동 키 전환 재시도
     # ────────────────────────────────────────────────
     def _call(self, system_msg, prompt):
+        if self.demo:
+            return {"success": False, "answer": "데모 모드 — LLM 키가 설정되지 않았습니다.",
+                    "key_label": "Demo", "key_index": 0}
         for attempt in range(len(self.slots)):
             try:
                 if self.current_provider() == 'groq':
@@ -313,6 +344,10 @@ class AIService:
         return self._call(self._SYS, prompt)
 
     def get_topic_insight(self, topic, topic_name, graph_data):
+        # 데모 모드: LLM 없이 차트 데이터에서 인사이트를 산출 (대시보드 정상 표시)
+        if self.demo:
+            return self._demo_topic_insight(topic, graph_data)
+
         ctx = self._build_context(graph_data)
 
         SYS_JSON = (
@@ -378,6 +413,38 @@ class AIService:
             fallback["key_label"] = self.current_label()
             fallback["key_index"] = self.get_current_key_index()
             return fallback
+
+    def _demo_topic_insight(self, topic, graph_data):
+        """데모 모드 인사이트 — 차트 데이터에서 최고 해지율 구간을 뽑아 구성."""
+        peak, avg = 0.0, 0.0
+        for i in range(1, 5):
+            h = graph_data.get(f"h{i}") or {}
+            vals = [v for v in (h.get("values") or []) if isinstance(v, (int, float))]
+            if vals:
+                peak = max(peak, max(vals))
+                if h.get("avg"):
+                    avg = h["avg"]
+        lift = round(peak - avg, 1) if avg else round(peak, 1)
+        name = (graph_data.get("_topic_name") or topic or "").split("(")[0].strip()
+        drop = max(round(lift / 2), 1)
+        return {
+            "summary": {
+                "number": f"{peak:.0f}%", "label": "고위험 구간 해지율",
+                "kpi1": {"val": f"{avg:.1f}%", "lab": "전체 평균"},
+                "kpi2": {"val": f"+{lift:.0f}%p", "lab": "평균 대비 격차"},
+                "sub": f"📌 {name} — 특정 구간 해지율이 평균을 크게 상회"},
+            "strategy": {
+                "number": "우선 케어", "label": "고위험 구간 집중",
+                "kpi1": {"val": "타깃", "lab": "상위 위험군"},
+                "kpi2": {"val": "즉시", "lab": "선제 대응"},
+                "sub": "📌 위험 구간 고객에 선제적 리텐션 캠페인 집행"},
+            "forecast": {
+                "number": f"-{drop:.0f}%p", "label": "해지율 감소 기대",
+                "kpi1": {"val": "리텐션", "lab": "이탈 방어"},
+                "kpi2": {"val": "ROI↑", "lab": "비용 대비 효율"},
+                "sub": "📌 선제 대응 시 해당 구간 해지율 완화 기대"},
+            "key_label": "Demo", "key_index": 0, "demo": True,
+        }
 
     def _fallback_topic_insight(self):
         return {
